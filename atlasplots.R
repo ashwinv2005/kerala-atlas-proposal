@@ -376,19 +376,28 @@ plotkl = function(path = "klmap.csv", a = 6, b = 5, c = -1, d = 2.1, exp1 = -1.5
   
   klbase_df = klbase_df %>%
     mutate(freq = (1/(1+exp(c + a*alt^exp1 + b*(long^2-d*long)))))
-  klbase_df$freq = round(klbase_df$freq,2)
+  klbase_df$freq = round(klbase_df$freq,1)
+  
+  klbase = rasterFromXYZ(klbase_df[,c(1,2,5)])
+  klbase = focal(klbase, w=matrix(1,nrow=3,ncol=3), fun=mean)
+  klbase_df = as.data.frame(klbase, xy = TRUE)
+  names(klbase_df)[3] = "freq"
   
   # I have used this viridis scale but you can use scale_fill_material instead or any others
   
   ## scale_fill_material colour schemes
   # https://cran.r-project.org/web/packages/ggsci/vignettes/ggsci.html
+  
+  klbase_df$freq = klbase_df$freq - 0.3
+  klbase_df$freq[klbase_df$freq < -0.1] = NA
+  klbase_df$freq[klbase_df$freq < 0] = 0
 
   plotbase = ggplot() +
     scale_x_continuous(expand = c(0,0)) +
     scale_y_continuous(expand = c(0,0)) +
     geom_raster(data = klbase_df , aes(x = x, y = y, fill = freq)) +
     #scale_fill_material("brown", na.value = "white", reverse = F) +
-    scale_fill_viridis() +
+    scale_fill_viridis(na.value = "grey") +
     theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(),
           axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
     theme(legend.title = element_blank(), legend.text = element_text(size = 12)) +
